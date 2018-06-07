@@ -33,4 +33,4 @@ Collected     1000 points (576.04/sec)
 By default, all values are also written to a Tensorboard log in the
 `runs/` directory:
 
-![screenshot](https://github.com/lwneal/logutil/screenshot.png)
+![screenshot](https://raw.githubusercontent.com/lwneal/logutil/master/screenshot.png)
