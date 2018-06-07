@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
-import numpy as np
 import time
 import datetime
-import pytz
 import json
+
 from tqdm import tqdm
+import numpy as np
+import pytz
 import tensorboard_logger
 
 run_id = 'runs/run-{}'.format(int(time.time()))
