@@ -13,9 +13,13 @@ import tensorboard_logger
 run_id = 'runs/run-{}'.format(int(time.time()))
 tensorboard_logger.configure(run_id)
 
+MAX_ENTRIES = 1000
+
 
 def resample(x, desired_length):
     width = len(x) // desired_length
+    if width == 0:
+        return x
     padding = (0, width - x.size % width)
     padded = np.pad(x, padding, mode='constant', constant_values=np.NaN)
     return np.nanmean(padded.reshape(-1, width), axis=1)
@@ -82,12 +86,15 @@ class TimeSeries:
     def collect(self, name, value):
         if not self.series:
             self.start_time = time.time()
+            self.totals[name] = 0
         if name not in self.series:
             self.series[name] = []
         if self.tensorboard:
             step = len(self.series[name])
             tensorboard_logger.log_value(name, value, step)
         self.series[name].append(convert_to_scalar(value))
+        self.series[name] = self.series[name][-MAX_ENTRIES:]
+        self.totals[name] += 1
 
     def collect_prediction(self, name, logits, ground_truth):
         if name not in self.predictions:
@@ -110,17 +117,17 @@ class TimeSeries:
         duration = time.time() - self.start_time
         lines.append("Collected {:.3f} sec ending {}".format(
             duration, formatted_time()))
-        maxlen = max(len(c) for c in self.series.values())
+        maxlen = max(self.totals.values())
         if self.epoch_length:
             lines.append(tqdm.format_meter(maxlen, self.epoch_length, duration, ncols=80))
         else:
             lines.append("Collected {:8d} points ({:.2f}/sec)".format(maxlen, maxlen / duration))
-        lines.append("{:>32}{:>14}{:>16}".format('Name', 'Avg.', 'Last 10'))
+        lines.append("{:>32}{:>14}{:>16}".format('Name', 'Last {}'.format(MAX_ENTRIES), 'Last 10'))
         for name in sorted(self.series):
             values = np.array(self.series[name])
             name = shorten(name)
             lines.append("{:>32}:      {:8.4f}      {:8.4f} {}".format(
-                name, values.mean(), values[-10:].mean(), sparkline(values)))
+                name, values[-MAX_ENTRIES:].mean(), values[-10:].mean(), sparkline(values)))
         if self.predictions:
             lines.append('Predictions:')
         for name, pred in self.predictions.items():
