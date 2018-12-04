@@ -8,10 +8,6 @@ import json
 from tqdm import tqdm
 import numpy as np
 import pytz
-import tensorboard_logger
-
-run_id = 'runs/run-{}'.format(int(time.time()))
-tensorboard_logger.configure(run_id)
 
 MAX_ENTRIES = 1000
 
@@ -68,10 +64,7 @@ def formatted_time(timezone='America/Los_Angeles'):
 
 
 class TimeSeries:
-    def __str__(self):
-        return self.format_all()
-
-    def __init__(self, title=None, epoch_length=None, tensorboard=True):
+    def __init__(self, title=None, epoch_length=None, tensorboard=False):
         self.series = {}
         self.predictions = {}
         self.totals = {}
@@ -80,6 +73,14 @@ class TimeSeries:
         self.title = title
         self.epoch_length = epoch_length
         self.tensorboard = tensorboard
+        if tensorboard:
+            import tensorboard_logger
+            run_id = 'runs/run-{}'.format(int(time.time()))
+            tensorboard_logger.configure(run_id)
+
+
+    def __str__(self):
+        return self.format_all()
 
     def collect(self, name, value):
         if not self.series:
