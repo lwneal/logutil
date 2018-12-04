@@ -15,21 +15,18 @@ tensorboard_logger.configure(run_id)
 
 MAX_ENTRIES = 1000
 
-
-def resample(x, desired_length):
-    width = len(x) // desired_length
-    if width == 0:
-        return x
-    padding = (0, width - x.size % width)
-    padded = np.pad(x, padding, mode='constant', constant_values=np.NaN)
-    return np.nanmean(padded.reshape(-1, width), axis=1)
+# Input: Single-dimensional array x of size larger than desired_length
+# Output: Array of length desired_length
+def downsample(x, desired_length):
+    indices = [int(np.round(i * len(x) / desired_length))
+               for i in range(desired_length + 1)]
+    return [np.mean(x[indices[i]:indices[i+1]]) for i in range(desired_length)]
 
 
 def sparkline(data, length=16):
     BARS = u'▁▂▃▅▆▇'
     if len(data) > length:
-        truncate = (len(data) // length) * length
-        samples = resample(data[:truncate], length)
+        samples = downsample(data, length)
     else:
         step = len(data) / length
         samples = [data[int(step * i / length)] for i in range(length)]
@@ -39,7 +36,7 @@ def sparkline(data, length=16):
     indexes = [i for n in samples
                        for i, thres in enumerate(bins)
                                   if thres <= n < thres+width]
-    return ''.join(BARS[i] for i in indexes)
+    return ''.join(BARS[i] for i in indexes)[:length]
 
 
 # We assume x is a scalar.
@@ -77,6 +74,7 @@ class TimeSeries:
     def __init__(self, title=None, epoch_length=None, tensorboard=True):
         self.series = {}
         self.predictions = {}
+        self.totals = {}
         self.start_time = time.time()
         self.last_printed_at = time.time()
         self.title = title
@@ -86,9 +84,9 @@ class TimeSeries:
     def collect(self, name, value):
         if not self.series:
             self.start_time = time.time()
-            self.totals[name] = 0
         if name not in self.series:
             self.series[name] = []
+            self.totals[name] = 0
         if self.tensorboard:
             step = len(self.series[name])
             tensorboard_logger.log_value(name, value, step)
