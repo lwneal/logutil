@@ -44,7 +44,7 @@ def convert_to_scalar(x):
         x = x.data.cpu()[0]
     try:
         return float(x)
-    except:
+    except ValueError:
         pass
     print('Warning: TimeSeries failed to convert scalar')
     return 0
