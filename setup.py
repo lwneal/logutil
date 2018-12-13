@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='logutil',
-        version='0.1.2',
+        version='0.1.3',
         description='Utilities for logging statistics over time',
         author='Larry Neal',
         author_email='nealla@lwneal.com',
