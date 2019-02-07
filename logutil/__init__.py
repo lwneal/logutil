@@ -89,6 +89,7 @@ class TimeSeries:
             self.series[name] = []
             self.totals[name] = 0
         if self.tensorboard:
+            import tensorboard_logger
             step = len(self.series[name])
             tensorboard_logger.log_value(name, value, step)
         self.series[name].append(convert_to_scalar(value))
